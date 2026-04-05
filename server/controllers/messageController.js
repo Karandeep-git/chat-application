@@ -7,9 +7,46 @@ import { io, userSocketMap } from "../server.js";
 export const getUserForSidebar = async (req, res) => {
   try {
     const userId = req.user._id;
-    const filteredUsers = await User.find({ _id: { $ne: userId } }).select(
-      "-password",
+    const filteredUsers = await User.find({ _id: { $ne: userId } })
+      .select("-password")
+      .lean();
+
+    const lastMessages = await Message.aggregate([
+      {
+        $match: {
+          $or: [{ senderId: userId }, { receiverId: userId }],
+        },
+      },
+      { $sort: { createdAt: -1 } },
+      {
+        $project: {
+          chatUserId: {
+            $cond: [{ $eq: ["$senderId", userId] }, "$receiverId", "$senderId"],
+          },
+          createdAt: 1,
+        },
+      },
+      {
+        $group: {
+          _id: "$chatUserId",
+          lastMessageAt: { $first: "$createdAt" },
+        },
+      },
+    ]);
+
+    const lastMessageMap = new Map(
+      lastMessages.map((message) => [
+        String(message._id),
+        new Date(message.lastMessageAt).getTime(),
+      ]),
     );
+
+    filteredUsers.sort((userA, userB) => {
+      const userALastMessage = lastMessageMap.get(String(userA._id)) || 0;
+      const userBLastMessage = lastMessageMap.get(String(userB._id)) || 0;
+
+      return userBLastMessage - userALastMessage;
+    });
 
     // Count number of messages not seen
     const unseenMessages = {};

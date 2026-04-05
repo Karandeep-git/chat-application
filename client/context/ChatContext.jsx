@@ -18,6 +18,27 @@ export const ChatProvider = ({ children }) => {
 
   const { socket, axios } = useContext(AuthContext);
 
+  const moveUserToTop = useCallback((userId) => {
+    if (!userId) {
+      return;
+    }
+
+    setUsers((prevUsers) => {
+      const userIndex = prevUsers.findIndex(
+        (user) => String(user._id) === String(userId),
+      );
+
+      if (userIndex <= 0) {
+        return prevUsers;
+      }
+
+      const nextUsers = [...prevUsers];
+      const [activeUser] = nextUsers.splice(userIndex, 1);
+      nextUsers.unshift(activeUser);
+      return nextUsers;
+    });
+  }, []);
+
   const getUsers = useCallback(async () => {
     try {
       const { data } = await axios.get("/api/messages/users");
@@ -61,6 +82,7 @@ export const ChatProvider = ({ children }) => {
 
         if (data.success) {
           setMessages((prevMessages) => [...prevMessages, data.newMessage]);
+          moveUserToTop(selectedUser._id);
         } else {
           toast.error(data.message);
         }
@@ -68,7 +90,7 @@ export const ChatProvider = ({ children }) => {
         toast.error(error.response?.data?.message || error.message);
       }
     },
-    [axios, selectedUser],
+    [axios, moveUserToTop, selectedUser],
   );
 
   const subscribeToMessages = useCallback(() => {
@@ -84,10 +106,12 @@ export const ChatProvider = ({ children }) => {
       if (selectedUser && senderId === String(selectedUser._id)) {
         newMessage.seen = true;
         setMessages((prevMessages) => [...prevMessages, newMessage]);
+        moveUserToTop(senderId);
         axios.put(`/api/messages/mark/${newMessage._id}`).catch(() => {});
         return;
       }
 
+      moveUserToTop(senderId);
       setUnseenMessages((prevUnseenMessages) => ({
         ...prevUnseenMessages,
         [senderId]: prevUnseenMessages[senderId]
@@ -95,7 +119,7 @@ export const ChatProvider = ({ children }) => {
           : 1,
       }));
     });
-  }, [axios, selectedUser, socket]);
+  }, [axios, moveUserToTop, selectedUser, socket]);
 
   const unsubscribeFromMessages = useCallback(() => {
     if (socket) {

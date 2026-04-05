@@ -6,9 +6,14 @@ import { AuthContext } from "./auth-context";
 
 export { AuthContext } from "./auth-context";
 
+const normalizeUrl = (url) => url?.replace(/\/$/, "");
+
+const defaultBackendUrl = import.meta.env.DEV
+  ? "http://localhost:5000"
+  : "https://quickchat-backend-enrg.onrender.com";
+
 const backendUrl =
-  import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") ||
-  "http://localhost:5000";
+  normalizeUrl(import.meta.env.VITE_BACKEND_URL) || defaultBackendUrl;
 
 axios.defaults.baseURL = backendUrl;
 

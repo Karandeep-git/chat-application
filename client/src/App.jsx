@@ -5,7 +5,6 @@ import ProfilePage from "./pages/ProfilePage";
 import { Toaster } from "react-hot-toast";
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import assets from "./assets/assets";
 
 const App = () => {
   const { authUser, isAuthReady } = useContext(AuthContext);
@@ -13,10 +12,17 @@ const App = () => {
   if (!isAuthReady) {
     return (
       <div
-        className="min-h-screen bg-cover bg-no-repeat bg-center flex items-center justify-center text-white"
-        style={{ backgroundImage: `url(${assets.bgImage})` }}
+        className="flex min-h-screen items-center justify-center"
+        style={{ background: "var(--page-bg)" }}
       >
-        <p className="rounded-full border border-white/20 bg-black/20 px-5 py-2 backdrop-blur-md">
+        <p
+          className="rounded-full border px-5 py-2"
+          style={{
+            background: "var(--panel-bg)",
+            borderColor: "var(--border-color)",
+            color: "var(--text-primary)",
+          }}
+        >
           Loading chat...
         </p>
       </div>
@@ -24,10 +30,7 @@ const App = () => {
   }
 
   return (
-    <div
-      className="min-h-screen bg-cover bg-no-repeat bg-center"
-      style={{ backgroundImage: `url(${assets.bgImage})` }}
-    >
+    <div className="min-h-screen" style={{ background: "var(--page-bg)" }}>
       <Toaster />
       <Routes>
         <Route
